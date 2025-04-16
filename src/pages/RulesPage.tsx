@@ -145,19 +145,19 @@ const RulesPage = () => {
                     <h3 className="text-sm font-semibold text-gray-500">Description</h3>
                     <p className="mt-1 text-sm">
                       Converts Java inner classes to separate TypeScript classes. This transformation preserves the relationship
-                      between the classes while adapting to TypeScript's module system.
+                      between the classes while adapting to TypeScript&apos;s module system.
                     </p>
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-gray-500">Example Transformation</h3>
                     <div className="mt-2 p-3 bg-gray-50 rounded-md text-xs font-mono text-gray-700">
                       <p className="mb-2">// Java:</p>
-                      <p>class Outer {</p>
-                      <p>  class Inner { ... }</p>
-                      <p>}</p>
+                      <p>class Outer {"{"}</p>
+                      <p>  class Inner {"{"} ... {"}"}</p>
+                      <p>{"}"}</p>
                       <p className="mt-2 mb-2">// TypeScript:</p>
-                      <p>class Outer { ... }</p>
-                      <p>class Inner { ... }</p>
+                      <p>class Outer {"{"} ... {"}"}</p>
+                      <p>class Inner {"{"} ... {"}"}</p>
                     </div>
                   </div>
                 </div>
