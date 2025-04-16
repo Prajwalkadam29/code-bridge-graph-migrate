@@ -110,7 +110,7 @@ const GraphVisualization: React.FC<GraphVisualizationProps> = ({
                       dur="3s"
                       repeatCount="indefinite"
                     />
-                  </animateMotion>
+                  </circle>
                 )}
               </g>
             );
