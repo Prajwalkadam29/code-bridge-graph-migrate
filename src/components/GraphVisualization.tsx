@@ -1,24 +1,29 @@
 
 import React, { useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { GraphData, GraphNode as BackendGraphNode, GraphEdge as BackendGraphEdge } from '@/services/CodeBridgeService';
 
-interface Node {
+interface GraphNode {
   id: string;
-  type: 'source' | 'target' | 'transform';
+  type: string;
   label: string;
   x?: number;
   y?: number;
+  properties?: Record<string, string>;
 }
 
-interface Edge {
+interface GraphEdge {
+  id: string;
   source: string;
   target: string;
+  label: string;
   highlighted?: boolean;
+  properties?: Record<string, string>;
 }
 
 interface GraphVisualizationProps {
-  nodes: Node[];
-  edges: Edge[];
+  nodes: GraphNode[];
+  edges: GraphEdge[];
   onNodeClick?: (nodeId: string) => void;
 }
 

@@ -21,10 +21,26 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { codeBridgeService, GraphData } from '@/services/CodeBridgeService';
 
+// Updated Node interface compatible with GraphVisualization expectations
+interface VisNode {
+  id: string;
+  type: string; 
+  label: string;
+}
+
+// Updated Edge interface compatible with GraphVisualization expectations
+interface VisEdge {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+  highlighted?: boolean;
+}
+
 const VisualizePage = () => {
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [edges, setEdges] = useState(sampleEdges);
-  const [nodes, setNodes] = useState(sampleNodes);
+  const [edges, setEdges] = useState<VisEdge[]>(sampleEdges);
+  const [nodes, setNodes] = useState<VisNode[]>(sampleNodes);
   const [sourceCode, setSourceCode] = useState(sourceCodeSample);
   const [targetCode, setTargetCode] = useState(targetCodeSample);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -87,12 +103,26 @@ const VisualizePage = () => {
       const generatedCode = await codeBridgeService.generateCode(JSON.stringify(transformedGraph));
       console.log('Generated TypeScript:', generatedCode);
       
+      // Convert backend graph nodes/edges to visualization format
+      const visNodes: VisNode[] = transformedGraph.nodes.map(node => ({
+        id: node.id,
+        type: node.type,
+        label: node.label,
+        properties: node.properties
+      }));
+      
+      const visEdges: VisEdge[] = transformedGraph.edges.map(edge => ({
+        id: edge.id || `${edge.source}-${edge.target}`,
+        source: edge.source,
+        target: edge.target,
+        label: edge.label,
+        highlighted: false,
+        properties: edge.properties
+      }));
+      
       // Update UI with the results
-      setNodes(transformedGraph.nodes);
-      setEdges(transformedGraph.edges.map(edge => ({
-        ...edge,
-        highlighted: false
-      })));
+      setNodes(visNodes);
+      setEdges(visEdges);
       setTargetCode(generatedCode);
       
       toast.success('Code processed successfully!');
@@ -189,7 +219,8 @@ const VisualizePage = () => {
             <CodeEditor 
               title="Target Code (TypeScript)" 
               language="typescript" 
-              code={targetCode} 
+              code={targetCode}
+              readOnly={true}
             />
           </div>
         </div>
