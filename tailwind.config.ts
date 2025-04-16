@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,19 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom colors for our graph
+				graph: {
+					node: {
+						source: '#6366F1', // indigo-500
+						target: '#8B5CF6', // violet-500
+						transform: '#D946EF', // fuchsia-500
+					},
+					edge: {
+						default: '#A5B4FC', // indigo-300
+						highlight: '#F472B6', // pink-400
+					},
+					background: '#F8FAFC', // slate-50
 				}
 			},
 			borderRadius: {
@@ -84,11 +98,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'flow': {
+					'0%': { strokeDashoffset: '100%' },
+					'100%': { strokeDashoffset: '0%' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'flow': 'flow 3s linear infinite'
 			}
 		}
 	},
