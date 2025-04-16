@@ -1,18 +1,17 @@
-
 // Sample data for demonstration purposes
 export const sampleNodes = [
   // Source code nodes (left side)
-  { id: 'src1', type: 'source', label: 'Class' },
-  { id: 'src2', type: 'source', label: 'Method' },
-  { id: 'src3', type: 'source', label: 'Loop' },
+  { id: 'src1', type: 'source' as const, label: 'Class' },
+  { id: 'src2', type: 'source' as const, label: 'Method' },
+  { id: 'src3', type: 'source' as const, label: 'Loop' },
 
   // Transformation node (middle)
-  { id: 'transform', type: 'transform', label: 'AST\nTransform' },
+  { id: 'transform', type: 'transform' as const, label: 'AST\nTransform' },
 
   // Target code nodes (right side)
-  { id: 'tgt1', type: 'target', label: 'Class' },
-  { id: 'tgt2', type: 'target', label: 'Method' },
-  { id: 'tgt3', type: 'target', label: 'Loop' },
+  { id: 'tgt1', type: 'target' as const, label: 'Class' },
+  { id: 'tgt2', type: 'target' as const, label: 'Method' },
+  { id: 'tgt3', type: 'target' as const, label: 'Loop' },
 ];
 
 export const sampleEdges = [
