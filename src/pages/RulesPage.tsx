@@ -1,57 +1,44 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Link } from 'react-router-dom';
 import { Home, Wrench, ArrowRightLeft, FileCode } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-const transformationRules = [
-  {
-    id: 'rule-1',
-    name: 'Class to Interface Conversion',
-    source: 'Java Class',
-    target: 'TypeScript Interface',
-    confidence: 95,
-    automated: true
-  },
-  {
-    id: 'rule-2',
-    name: 'Static Methods to Module Functions',
-    source: 'Static Method',
-    target: 'Module Function',
-    confidence: 90,
-    automated: true
-  },
-  {
-    id: 'rule-3',
-    name: 'Inner Class to Separate Class',
-    source: 'Inner Class',
-    target: 'Standalone Class',
-    confidence: 92,
-    automated: true
-  },
-  {
-    id: 'rule-4',
-    name: 'Getter/Setter to Property',
-    source: 'Accessor Methods',
-    target: 'TypeScript Property',
-    confidence: 85,
-    automated: true
-  },
-  {
-    id: 'rule-5',
-    name: 'For Loop to Array Methods',
-    source: 'Traditional For Loop',
-    target: 'map/filter/reduce',
-    confidence: 80,
-    automated: false
-  }
-];
+import TransformationRuleList from '@/components/TransformationRuleList';
+import { codeBridgeService, TransformationRule, TransformationStats } from '@/services/CodeBridgeService';
+import { toast } from 'sonner';
 
 const RulesPage = () => {
+  const [selectedRule, setSelectedRule] = useState<TransformationRule | null>(null);
+  const [stats, setStats] = useState<TransformationStats | null>(null);
+  
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        await codeBridgeService.initialize();
+        const statsData = await codeBridgeService.getTransformationStats();
+        setStats(statsData);
+      } catch (error) {
+        console.error('Failed to load transformation stats:', error);
+        // Set default stats if there's an error
+        setStats({
+          totalNodes: 5,
+          transformedNodes: 4,
+          rulesApplied: ['ClassToInterface', 'JavaToTS_Types'],
+          confidence: 88
+        });
+      }
+    };
+    
+    loadStats();
+  }, []);
+  
+  const handleRuleSelect = (rule: TransformationRule) => {
+    setSelectedRule(rule);
+    toast.info(`Selected rule: ${rule.name}`);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header />
@@ -84,47 +71,7 @@ const RulesPage = () => {
         
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wrench className="h-5 w-5 text-purple-600" />
-                  Available Transformation Rules
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Rule</TableHead>
-                      <TableHead>From</TableHead>
-                      <TableHead>To</TableHead>
-                      <TableHead>Confidence</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transformationRules.map(rule => (
-                      <TableRow key={rule.id}>
-                        <TableCell className="font-medium">{rule.name}</TableCell>
-                        <TableCell>{rule.source}</TableCell>
-                        <TableCell>{rule.target}</TableCell>
-                        <TableCell>
-                          <Badge variant={rule.confidence > 90 ? "default" : "secondary"}>
-                            {rule.confidence}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {rule.automated ? 
-                            <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50">Automated</Badge> :
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-50">Manual Review</Badge>
-                          }
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <TransformationRuleList onRuleSelect={handleRuleSelect} />
           </div>
           
           <div>
@@ -139,13 +86,15 @@ const RulesPage = () => {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-500">Selected Rule</h3>
-                    <p className="mt-1">Inner Class to Separate Class</p>
+                    <p className="mt-1">{selectedRule ? selectedRule.name : "Inner Class to Separate Class"}</p>
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-gray-500">Description</h3>
                     <p className="mt-1 text-sm">
-                      Converts Java inner classes to separate TypeScript classes. This transformation preserves the relationship
-                      between the classes while adapting to TypeScript&apos;s module system.
+                      {selectedRule 
+                        ? `Converts ${selectedRule.source} to ${selectedRule.target} with ${selectedRule.confidence}% confidence.`
+                        : "Converts Java inner classes to separate TypeScript classes. This transformation preserves the relationship between the classes while adapting to TypeScript&apos;s module system."
+                      }
                     </p>
                   </div>
                   <div>
@@ -175,19 +124,27 @@ const RulesPage = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Total Rules:</span>
-                    <span className="font-medium">5</span>
+                    <span className="font-medium">
+                      {stats ? stats.rulesApplied.length : "..."}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Automated Rules:</span>
-                    <span className="font-medium">4</span>
+                    <span className="text-sm text-gray-600">Total Nodes:</span>
+                    <span className="font-medium">
+                      {stats ? stats.totalNodes : "..."}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Manual Review:</span>
-                    <span className="font-medium">1</span>
+                    <span className="text-sm text-gray-600">Transformed:</span>
+                    <span className="font-medium">
+                      {stats ? stats.transformedNodes : "..."}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Average Confidence:</span>
-                    <span className="font-medium">88%</span>
+                    <span className="font-medium">
+                      {stats ? `${stats.confidence}%` : "..."}
+                    </span>
                   </div>
                 </div>
               </CardContent>

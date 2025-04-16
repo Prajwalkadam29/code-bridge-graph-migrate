@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import GraphVisualization from '@/components/GraphVisualization';
 import CodeEditor from '@/components/CodeEditor';
@@ -17,22 +17,100 @@ import { Separator } from '@/components/ui/separator';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { Link } from 'react-router-dom';
 import { Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { codeBridgeService, GraphData } from '@/services/CodeBridgeService';
 
 const VisualizePage = () => {
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [edges, setEdges] = useState(sampleEdges);
+  const [nodes, setNodes] = useState(sampleNodes);
+  const [sourceCode, setSourceCode] = useState(sourceCodeSample);
+  const [targetCode, setTargetCode] = useState(targetCodeSample);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Load WASM module on component mount
+  useEffect(() => {
+    const initWasm = async () => {
+      try {
+        await codeBridgeService.initialize();
+        setIsLoaded(true);
+        toast.success('C++ WASM module loaded successfully');
+      } catch (error) {
+        console.error('Failed to initialize WASM module:', error);
+        toast.error('Failed to load C++ module. Using sample data instead.');
+        // Continue with sample data
+        setIsLoaded(true);
+      }
+    };
+    
+    initWasm();
+  }, []);
   
   // Handle node click to highlight connected edges
   const handleNodeClick = (nodeId: string) => {
     setSelectedNode(nodeId);
     
     // Update edge highlighting based on selected node
-    const updatedEdges = sampleEdges.map(edge => ({
+    const updatedEdges = edges.map(edge => ({
       ...edge,
       highlighted: edge.source === nodeId || edge.target === nodeId
     }));
     
     setEdges(updatedEdges);
+  };
+  
+  // Process the Java code with the WASM module
+  const processCode = async () => {
+    if (!isLoaded) {
+      toast.error('WASM module not loaded yet');
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      // Parse Java code to AST
+      const astJson = await codeBridgeService.parseJavaCode(sourceCode);
+      console.log('Generated AST:', astJson);
+      
+      // Convert AST to graph
+      const graphData = await codeBridgeService.astToGraph(astJson);
+      console.log('Generated Graph:', graphData);
+      
+      // Transform the graph
+      const transformedGraph = await codeBridgeService.transformGraph(JSON.stringify(graphData));
+      console.log('Transformed Graph:', transformedGraph);
+      
+      // Generate TypeScript code
+      const generatedCode = await codeBridgeService.generateCode(JSON.stringify(transformedGraph));
+      console.log('Generated TypeScript:', generatedCode);
+      
+      // Update UI with the results
+      setNodes(transformedGraph.nodes);
+      setEdges(transformedGraph.edges.map(edge => ({
+        ...edge,
+        highlighted: false
+      })));
+      setTargetCode(generatedCode);
+      
+      toast.success('Code processed successfully!');
+    } catch (error) {
+      console.error('Error processing code:', error);
+      toast.error('Error processing code. Using sample data instead.');
+      
+      // Revert to sample data
+      setNodes(sampleNodes);
+      setEdges(sampleEdges);
+      setTargetCode(targetCodeSample);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+  
+  const handleSourceCodeChange = (newCode: string) => {
+    setSourceCode(newCode);
   };
 
   return (
@@ -68,7 +146,7 @@ const VisualizePage = () => {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <GraphVisualization 
-              nodes={sampleNodes} 
+              nodes={nodes} 
               edges={edges}
               onNodeClick={handleNodeClick} 
             />
@@ -89,8 +167,18 @@ const VisualizePage = () => {
             <CodeEditor 
               title="Source Code (Java)" 
               language="java" 
-              code={sourceCodeSample} 
+              code={sourceCode}
+              onChange={handleSourceCodeChange}
             />
+            <div className="mt-4">
+              <Button 
+                onClick={processCode} 
+                disabled={isProcessing || !isLoaded}
+                className="w-full"
+              >
+                {isProcessing ? "Processing..." : "Process with C++ (WASM)"}
+              </Button>
+            </div>
           </div>
           
           <div>
@@ -101,7 +189,7 @@ const VisualizePage = () => {
             <CodeEditor 
               title="Target Code (TypeScript)" 
               language="typescript" 
-              code={targetCodeSample} 
+              code={targetCode} 
             />
           </div>
         </div>
